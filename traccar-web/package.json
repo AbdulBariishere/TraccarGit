@@ -1,0 +1,9 @@
+{
+    "name": "traccar-web",
+    "devDependencies": {
+        "eslint": "^4.4.1"
+    },
+    "scripts": {
+        "lint": "./node_modules/.bin/eslint web/."
+    }
+}
