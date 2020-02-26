@@ -47,12 +47,12 @@ public final class QueryBuilder {
     private static final Logger LOGGER = LoggerFactory.getLogger(QueryBuilder.class);
 
     private final Map<String, List<Integer>> indexMap = new HashMap<>();
-    private Connection connection;
-    private PreparedStatement statement;
+    public Connection connection;
+    public PreparedStatement statement;
     private final String query;
     private final boolean returnGeneratedKeys;
 
-    private QueryBuilder(DataSource dataSource, String query, boolean returnGeneratedKeys) throws SQLException {
+   public QueryBuilder(DataSource dataSource, String query, boolean returnGeneratedKeys) throws SQLException {
         this.query = query;
         this.returnGeneratedKeys = returnGeneratedKeys;
         if (query != null) {
@@ -131,16 +131,29 @@ public final class QueryBuilder {
 
         return parsedQuery.toString();
     }
-
+       //this is create by me
+   public  String  createquery(DataSource dataSource, String query) throws SQLException{
+       statement = connection.prepareStatement(query);
+      ResultSet rs= statement.executeQuery();
+      return rs.getString(1);
+   }
+//   ********************************** **ended by me*************************************
     public static QueryBuilder create(DataSource dataSource, String query) throws SQLException {
         return new QueryBuilder(dataSource, query, false);
+    }
+    public static QueryBuilder createinsert(DataSource dataSource, String query) throws SQLException {
+        return new QueryBuilder(dataSource, query, true);
+    }
+    public static QueryBuilder createqueryforupdatePosition(DataSource dataSource, String query) throws SQLException {
+        return new QueryBuilder(dataSource, query, true);
     }
     public static QueryBuilder createqueryfortrip(DataSource dataSource, String query) throws SQLException {
         return new QueryBuilder(dataSource, query, false);
     }
     public static QueryBuilder create(
             DataSource dataSource, String query, boolean returnGeneratedKeys) throws SQLException {
-        return new QueryBuilder(dataSource, query, returnGeneratedKeys);
+            return new QueryBuilder(dataSource, query, returnGeneratedKeys);
+
     }
 
     private List<Integer> indexes(String name) {
@@ -211,6 +224,7 @@ public final class QueryBuilder {
         }
         return this;
     }
+
 
     public QueryBuilder setString(String name, String value) throws SQLException {
         for (int i : indexes(name)) {

@@ -29,6 +29,7 @@ import java.util.Set;
 import javax.naming.InitialContext;
 import javax.sql.DataSource;
 
+import com.google.inject.internal.cglib.core.$DuplicatesPredicate;
 import liquibase.Contexts;
 import liquibase.Liquibase;
 import liquibase.database.Database;
@@ -80,6 +81,7 @@ public class DataManager {
     private boolean generateQueries;
 
     private boolean forceLdap;
+    private QueryBuilder queryBuilder;
 
     public DataManager(Config config) throws Exception {
         this.config = config;
@@ -121,10 +123,10 @@ public class DataManager {
             }
 
             HikariConfig hikariConfig = new HikariConfig();
-            hikariConfig.setDriverClassName("com.mysql.jdbc.Driver");
-            hikariConfig.setJdbcUrl("jdbc:mysql://localhost:3306/traccar?serverTimezone=UTC&amp;useSSL=false&amp;allowMultiQueries=true&amp;autoReconnect=true&amp;useUnicode=yes&amp;characterEncoding=UTF-8&amp;sessionVariables=sql_mode=''");
-            hikariConfig.setUsername("root");
-            hikariConfig.setPassword("root");
+            hikariConfig.setDriverClassName(config.getString("database.driver"));
+            hikariConfig.setJdbcUrl(config.getString("database.url"));
+            hikariConfig.setUsername(config.getString("database.user"));
+            hikariConfig.setPassword(config.getString("database.password"));
             hikariConfig.setConnectionInitSql(config.getString("database.checkConnection", "SELECT 1"));
             hikariConfig.setIdleTimeout(600000);
 
@@ -242,9 +244,7 @@ public class DataManager {
             if (generateQueries) {
                 query = constructObjectQuery(action, clazz, extended);
                 config.setString(queryName, query);
-                if(getObjectsTableName(clazz).equals("tc_devices") && action.equals("INSERT")){
 
-                }
 
             } else {
                 LOGGER.info("Query not provided: " + queryName);
@@ -361,6 +361,10 @@ public class DataManager {
                 .setObject(position)
                 .executeUpdate();
 
+        QueryBuilder.createqueryforupdatePosition(dataSource,getQuery("database.updateLatestPositioninTable"))
+                .setDate("now", new Date())
+                .setObject(position)
+                .executeUpdate();
 
     }
 
@@ -369,6 +373,7 @@ public class DataManager {
                 .executeQuery(Position.class);
 
     }
+
 
     public void clearHistory() throws SQLException {
         long historyDays = config.getInteger("database.historyDays");
@@ -438,6 +443,7 @@ public class DataManager {
         return Introspector.decapitalize(name) + (!name.contains("Id") ? "Id" : "");
     }
 
+
     public Collection<Permission> getPermissions(Class<? extends BaseModel> owner, Class<? extends BaseModel> property)
             throws SQLException, ClassNotFoundException {
         return QueryBuilder.create(dataSource, getQuery(ACTION_SELECT_ALL, owner, property))
@@ -465,30 +471,20 @@ public class DataManager {
     }
 
 
+
+
     public void addObject(BaseModel entity) throws SQLException {
         entity.setId(QueryBuilder.create(dataSource, getQuery(ACTION_INSERT, entity.getClass()), true)
                 .setObject(entity)
                 .executeUpdate());
-        try{
-            Class.forName("com.mysql.jdbc.Driver");
-            Connection con=DriverManager.getConnection(
-                    "jdbc:mysql://localhost:3306/traccar","root","root");
-
-            Statement stmt=con.createStatement();
-
-            ResultSet rs=stmt.executeQuery("SELECT uniqueid FROM traccar.tc_devices order by id desc limit 1");
-            String uniqueId="";
-            while(rs.next()) {
-               uniqueId = rs.getString(1);
-            }
-        stmt.addBatch("set @sql = concat('create table  tc_device_', '"+(uniqueId)+"' , " +
-                "' ( id int(11) AUTO_INCREMENT, protocol varchar(128),deviceid int(11),servertime timestamp,devicetime timestamp,fixtime timestamp,valid bit(1),latitude double, longitude double," +
-                "altitude float,speed float,course float,address varchar(512),attributes varchar(4000),accuracy double,network varchar(4000),PRIMARY KEY (id))')");
-            stmt.addBatch(" prepare stmt from @sql");
-            stmt.addBatch("  execute stmt");
-            stmt.addBatch(" deallocate prepare stmt");
-            stmt.executeBatch();
-        }catch (Exception e){
+        try {
+            QueryBuilder.createinsert(dataSource, getQuery("database.CreateStatmentforCreatDevice")).executeUpdate();
+            QueryBuilder.createinsert(dataSource,  getQuery("database.PreapareStatementforCreateDevice")).executeUpdate();
+            QueryBuilder.createinsert( dataSource,getQuery("database.ExecuteStatementforCreateDevice")).executeUpdate();
+            QueryBuilder.createinsert(dataSource,getQuery("database.DeallocateStatementforCreateDevice")).executeUpdate();
+//}
+        }
+        catch (Exception e){
             System.out.println(e.getMessage());
         }
     }

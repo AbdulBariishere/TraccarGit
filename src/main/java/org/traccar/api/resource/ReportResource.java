@@ -182,7 +182,7 @@ public class ReportResource extends BaseResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public JSONObject getTripsummary(){
-JSONObject jsonObject =new JSONObject();
+
         JSONObject jsonObject2 =new JSONObject();
         JSONArray jsonArray=new JSONArray();
         try{
@@ -191,25 +191,16 @@ JSONObject jsonObject =new JSONObject();
                     "jdbc:mysql://localhost:3306/traccar","root","root");
 //here sonoo is database name, root is username and password
             Statement stmt=con.createStatement();
-            ResultSet rs=stmt.executeQuery("select * from tripsummary");
+            ResultSet rs=stmt.executeQuery("select id,lat,lon,data from latlong");
             while(rs.next()) {
-                jsonObject.put("Vehicle", rs.getString(2));
-                jsonObject.put("Driver", rs.getString(3));
-                jsonObject.put("ImeiNo", rs.getString(4));
-                jsonObject.put("Running", rs.getString(5));
-                jsonObject.put("Idle", rs.getString(6));
-                jsonObject.put("Stop", rs.getString(7));
-                jsonObject.put("Firstignitionon", rs.getString(8));
-                jsonObject.put("LastIgnitionoff", rs.getString(9));
-                jsonObject.put("Avg", rs.getString(10));
-                jsonObject.put("Max", rs.getString(11));
-                jsonObject.put("Overspeed", rs.getString(12));
-                jsonObject.put("Alert", rs.getString(13));
-                jsonObject.put("Nooftrips", rs.getString(14));
-                jsonObject.put("distance", rs.getString(15));
+                JSONObject jsonObject =new JSONObject();
+                jsonObject.put("id",rs.getInt(1));
+                jsonObject.put("lat",rs.getDouble(2));
+                jsonObject.put("lon",rs.getDouble(3));
                 jsonArray.add(jsonObject);
                            }
             jsonObject2.put("data",jsonArray);
+
         }catch(Exception e){ System.out.println(e);}
         return jsonObject2;
 }

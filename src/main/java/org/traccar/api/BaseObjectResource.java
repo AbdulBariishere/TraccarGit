@@ -19,6 +19,7 @@ package org.traccar.api;
 import java.sql.SQLException;
 import java.util.Set;
 
+import javax.sql.DataSource;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -27,10 +28,8 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Response;
 
 import org.traccar.Context;
-import org.traccar.database.BaseObjectManager;
-import org.traccar.database.ExtendedObjectManager;
-import org.traccar.database.ManagableObjects;
-import org.traccar.database.SimpleObjectManager;
+import org.traccar.config.Config;
+import org.traccar.database.*;
 import org.traccar.helper.LogAction;
 import org.traccar.model.BaseModel;
 import org.traccar.model.Calendar;
@@ -44,6 +43,8 @@ import org.traccar.model.User;
 public abstract class BaseObjectResource<T extends BaseModel> extends BaseResource {
 
     private Class<T> baseClass;
+
+    private DataSource dataSource;
 
     public BaseObjectResource(Class<T> baseClass) {
         this.baseClass = baseClass;

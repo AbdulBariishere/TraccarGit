@@ -17,7 +17,6 @@ package org.traccar.handler.events;
 
 import java.util.Collections;
 import java.util.Map;
-
 import io.netty.channel.ChannelHandler;
 import org.traccar.config.Config;
 import org.traccar.config.Keys;
@@ -55,5 +54,4 @@ public class AlertEventHandler extends BaseEventHandler {
         }
         return null;
     }
-
 }

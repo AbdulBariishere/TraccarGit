@@ -23,7 +23,6 @@ import org.traccar.config.Keys;
 import org.traccar.database.IdentityManager;
 import org.traccar.helper.DistanceCalculator;
 import org.traccar.model.Position;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 

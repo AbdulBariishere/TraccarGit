@@ -62,6 +62,21 @@
         UPDATE tc_devices SET positionId = :id WHERE id = :deviceId
     </entry>
 
+    <entry key="database.updateLatestPositioninTable">
+        UPDATE tc_position SET servertime = :servertime , devicetime= :devicetime,fixtime= :fixtime,valid= :valid,
+        latitude=:latitude,longitude= :longitude,altitude= :altitude,speed= :speed,course= :course,addess= :address,
+        attributes= :attributes,accuracy= :accuracy ,network = :network where deviceid= :deviceId
+    </entry>
+
+    <entry key='database.insertPosition'>
+        set @sql = concat('insert into tc_device_', :deviceId, ' (protocol, deviceid, servertime, devicetime, fixtime,valid ,latitude ,longitude ,altitude ,speed ,course ,addess ,attributes ,accuracy,network)
+        values (:protocol, :deviceid, :servertime, :fixtime, :valid, :latitude, :longitude, :altitude, :speed, :course, :addess, :attributes, :accuracy, :network)');
+        prepare stmt from @sql;
+        execute stmt ;
+        deallocate prepare stmt;
+    </entry>
+
+
     <entry key='database.selectEvents'>
         SELECT * FROM tc_events WHERE deviceId = :deviceId AND serverTime BETWEEN :from AND :to ORDER BY serverTime
     </entry>
@@ -78,6 +93,19 @@
         SELECT * FROM tc_statistics WHERE captureTime BETWEEN :from AND :to ORDER BY captureTime
     </entry>
 
+    <entry key='database.CreateStatmentforCreatDevice'>
+        set @sql = concat('create table  tc_device_',  (select uniqueId from tc_devices order by id desc limit 1),  '( id int(11) AUTO_INCREMENT, protocol varchar(128),deviceid int(11),servertime timestamp,devicetime timestamp,fixtime timestamp,valid bit(1),latitude double, longitude double,
+        altitude float,speed float,course float,address varchar(512),attributes varchar(4000),accuracy double,network varchar(4000),PRIMARY KEY (id))');
+    </entry>
+    <entry key='database.PreapareStatementforCreateDevice'>
+        prepare stmt from @sql;
+    </entry>
+    <entry key='database.ExecuteStatementforCreateDevice'>
+        execute stmt;
+    </entry>
+    <entry key='database.DeallocateStatementforCreateDevice'>
+        deallocate prepare stmt;
+    </entry>
 
 
     <entry key='gps103.port'>5001</entry>
@@ -103,7 +131,7 @@
     <entry key='meitrack.port'>5020</entry>
     <entry key='skypatrol.port'>5021</entry>
     <entry key='gt02.port'>5022</entry>
-    <entry key='gt06.port'>5023</entry>
+    <entry key='gt06.port'>10202</entry>
     <entry key='megastek.port'>5024</entry>
     <entry key='navigil.port'>5025</entry>
     <entry key='gpsgate.port'>5026</entry>
