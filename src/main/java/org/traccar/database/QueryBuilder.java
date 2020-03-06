@@ -72,6 +72,9 @@ public final class QueryBuilder {
         }
     }
 
+
+
+
     private static String parse(String query, Map<String, List<Integer>> paramMap) {
 
         int length = query.length();
@@ -131,13 +134,7 @@ public final class QueryBuilder {
 
         return parsedQuery.toString();
     }
-       //this is create by me
-   public  String  createquery(DataSource dataSource, String query) throws SQLException{
-       statement = connection.prepareStatement(query);
-      ResultSet rs= statement.executeQuery();
-      return rs.getString(1);
-   }
-//   ********************************** **ended by me*************************************
+
     public static QueryBuilder create(DataSource dataSource, String query) throws SQLException {
         return new QueryBuilder(dataSource, query, false);
     }

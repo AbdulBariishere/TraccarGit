@@ -282,6 +282,8 @@ public class Position extends Message {
         return accuracy;
     }
 
+
+
     public void setAccuracy(double accuracy) {
         this.accuracy = accuracy;
     }
@@ -295,6 +297,36 @@ public class Position extends Message {
     public void setNetwork(Network network) {
         this.network = network;
     }
+
+    public Double distance;
+
+    public Double getDistance() {
+        return distance;
+    }
+
+
+    public void setDistance(Double distance) {
+        this.distance = distance;
+    }
+
+    public  Double totalDistance;
+
+    public Double getTotalDistance() {
+        return totalDistance;
+    }
+
+    public void setTotalDistance(Double totalDistance) {
+        this.totalDistance = totalDistance;
+    }
+    public String ignition;
+    public String getIgnition() {
+        return ignition;
+    }
+
+    public void setIgnition(String ignition) {
+       this.ignition = ignition;
+    }
+
 
     @Override
     @QueryIgnore

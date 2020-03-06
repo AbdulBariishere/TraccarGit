@@ -33,7 +33,6 @@ public class IgnitionEventHandler extends BaseEventHandler {
     public IgnitionEventHandler(IdentityManager identityManager) {
         this.identityManager = identityManager;
     }
-
     @Override
     protected Map<Event, Position> analyzePosition(Position position) {
         Device device = identityManager.getById(position.getDeviceId());
@@ -45,20 +44,26 @@ public class IgnitionEventHandler extends BaseEventHandler {
 
         if (position.getAttributes().containsKey(Position.KEY_IGNITION)) {
             boolean ignition = position.getBoolean(Position.KEY_IGNITION);
-
             Position lastPosition = identityManager.getLastPosition(position.getDeviceId());
             if (lastPosition != null && lastPosition.getAttributes().containsKey(Position.KEY_IGNITION)) {
                 boolean oldIgnition = lastPosition.getBoolean(Position.KEY_IGNITION);
 
                 if (ignition && !oldIgnition) {
+
                     result = Collections.singletonMap(
                             new Event(Event.TYPE_IGNITION_ON, position.getDeviceId(), position.getId()), position);
+
                 } else if (!ignition && oldIgnition) {
+
                     result = Collections.singletonMap(
                             new Event(Event.TYPE_IGNITION_OFF, position.getDeviceId(), position.getId()), position);
+
                 }
             }
+
+
         }
+
         return result;
     }
 

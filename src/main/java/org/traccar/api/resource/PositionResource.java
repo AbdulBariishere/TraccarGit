@@ -68,30 +68,30 @@ public class PositionResource extends BaseResource {
                     deviceId, DateUtil.parseDate(from), DateUtil.parseDate(to));
         }
     }
-
-    @GET
-    @Produces(TEXT_CSV)
-    public Response getCsv(
-            @QueryParam("deviceId") long deviceId, @QueryParam("from") String from, @QueryParam("to") String to)
-            throws SQLException {
-        Context.getPermissionsManager().checkDevice(getUserId(), deviceId);
-        CsvBuilder csv = new CsvBuilder();
-        csv.addHeaderLine(new Position());
-        csv.addArray(Context.getDataManager().getPositions(
-                deviceId, DateUtil.parseDate(from), DateUtil.parseDate(to)));
-        return Response.ok(csv.build()).header(HttpHeaders.CONTENT_DISPOSITION, CONTENT_DISPOSITION_VALUE_CSV).build();
-    }
-
-    @GET
-    @Produces(GPX)
-    public Response getGpx(
-            @QueryParam("deviceId") long deviceId, @QueryParam("from") String from, @QueryParam("to") String to)
-            throws SQLException {
-        Context.getPermissionsManager().checkDevice(getUserId(), deviceId);
-        GpxBuilder gpx = new GpxBuilder(Context.getIdentityManager().getById(deviceId).getName());
-        gpx.addPositions(Context.getDataManager().getPositions(
-                deviceId, DateUtil.parseDate(from), DateUtil.parseDate(to)));
-        return Response.ok(gpx.build()).header(HttpHeaders.CONTENT_DISPOSITION, CONTENT_DISPOSITION_VALUE_GPX).build();
-    }
+//
+//    @GET
+//    @Produces(TEXT_CSV)
+//    public Response getCsv(
+//            @QueryParam("deviceId") long deviceId, @QueryParam("from") String from, @QueryParam("to") String to)
+//            throws SQLException {
+//        Context.getPermissionsManager().checkDevice(getUserId(), deviceId);
+//        CsvBuilder csv = new CsvBuilder();
+//        csv.addHeaderLine(new Position());
+//        csv.addArray(Context.getDataManager().getPositions(
+//                deviceId, DateUtil.parseDate(from), DateUtil.parseDate(to)));
+//        return Response.ok(csv.build()).header(HttpHeaders.CONTENT_DISPOSITION, CONTENT_DISPOSITION_VALUE_CSV).build();
+//    }
+//
+//    @GET
+//    @Produces(GPX)
+//    public Response getGpx(
+//            @QueryParam("deviceId") long deviceId, @QueryParam("from") String from, @QueryParam("to") String to)
+//            throws SQLException {
+//        Context.getPermissionsManager().checkDevice(getUserId(), deviceId);
+//        GpxBuilder gpx = new GpxBuilder(Context.getIdentityManager().getById(deviceId).getName());
+//        gpx.addPositions(Context.getDataManager().getPositions(
+//                deviceId, DateUtil.parseDate(from), DateUtil.parseDate(to)));
+//        return Response.ok(gpx.build()).header(HttpHeaders.CONTENT_DISPOSITION, CONTENT_DISPOSITION_VALUE_GPX).build();
+//    }
 
 }

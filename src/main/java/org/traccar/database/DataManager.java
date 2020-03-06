@@ -38,6 +38,8 @@ import liquibase.exception.LiquibaseException;
 import liquibase.resource.FileSystemResourceAccessor;
 import liquibase.resource.ResourceAccessor;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.config.Config;
@@ -66,22 +68,28 @@ import com.zaxxer.hikari.HikariDataSource;
 
 public class DataManager {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(DataManager.class);
-
     public static final String ACTION_SELECT_ALL = "selectAll";
     public static final String ACTION_SELECT = "select";
     public static final String ACTION_INSERT = "insert";
     public static final String ACTION_UPDATE = "update";
     public static final String ACTION_DELETE = "delete";
-
+    public static final String DRIVER = "com.mysql.jdbc.Driver";
+    public static final String URL = "jdbc:mysql://localhost:3306/traccar";
+    public static final String USERNAME = "root";
+    public static final String PASSWORD = "root";
+    private static final Logger LOGGER = LoggerFactory.getLogger(DataManager.class);
     private final Config config;
-
+    public PreparedStatement preparedStatement;
+    public Connection connection;
+    public ResultSet resultSet;
     private DataSource dataSource;
 
     private boolean generateQueries;
 
     private boolean forceLdap;
     private QueryBuilder queryBuilder;
+
+
 
     public DataManager(Config config) throws Exception {
         this.config = config;
@@ -90,57 +98,6 @@ public class DataManager {
 
         initDatabase();
         initDatabaseSchema();
-    }
-
-    private void initDatabase() throws Exception {
-
-        String jndiName = config.getString("database.jndi");
-
-        if (jndiName != null) {
-
-            dataSource = (DataSource) new InitialContext().lookup(jndiName);
-
-        } else {
-
-            String driverFile = config.getString("database.driverFile");
-            if (driverFile != null) {
-                ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-                try {
-                    Method method = classLoader.getClass().getDeclaredMethod("addURL", URL.class);
-                    method.setAccessible(true);
-                    method.invoke(classLoader, new File(driverFile).toURI().toURL());
-                } catch (NoSuchMethodException e) {
-                    Method method = classLoader.getClass()
-                            .getDeclaredMethod("appendToClassPathForInstrumentation", String.class);
-                    method.setAccessible(true);
-                    method.invoke(classLoader, driverFile);
-                }
-            }
-
-            String driver = config.getString("database.driver");
-            if (driver != null) {
-                Class.forName(driver);
-            }
-
-            HikariConfig hikariConfig = new HikariConfig();
-            hikariConfig.setDriverClassName(config.getString("database.driver"));
-            hikariConfig.setJdbcUrl(config.getString("database.url"));
-            hikariConfig.setUsername(config.getString("database.user"));
-            hikariConfig.setPassword(config.getString("database.password"));
-            hikariConfig.setConnectionInitSql(config.getString("database.checkConnection", "SELECT 1"));
-            hikariConfig.setIdleTimeout(600000);
-
-            int maxPoolSize = config.getInteger("database.maxPoolSize");
-
-            if (maxPoolSize != 0) {
-                hikariConfig.setMaximumPoolSize(maxPoolSize);
-            }
-
-            generateQueries = config.getBoolean("database.generateQueries");
-
-            dataSource = new HikariDataSource(hikariConfig);
-
-        }
     }
 
     public static String constructObjectQuery(String action, Class<?> clazz, boolean extended) {
@@ -217,6 +174,109 @@ public class DataManager {
         }
     }
 
+    private static String getPermissionsTableName(Class<?> owner, Class<?> property) {
+        String propertyName = property.getSimpleName();
+        if (propertyName.equals("ManagedUser")) {
+            propertyName = "User";
+        }
+        return "tc_" + Introspector.decapitalize(owner.getSimpleName())
+                + "_" + Introspector.decapitalize(propertyName);
+    }
+
+    private static String getObjectsTableName(Class<?> clazz) {
+        String result = "tc_" + Introspector.decapitalize(clazz.getSimpleName());
+        // Add "s" ending if object name is not plural already
+        if (!result.endsWith("s")) {
+            result += "s";
+        }
+        return result;
+    }
+
+    public static Class<?> getClassByName(String name) throws ClassNotFoundException {
+        switch (name.toLowerCase().replace("id", "")) {
+            case "device":
+                return Device.class;
+            case "group":
+                return Group.class;
+            case "user":
+                return User.class;
+            case "manageduser":
+                return ManagedUser.class;
+            case "geofence":
+                return Geofence.class;
+            case "driver":
+                return Driver.class;
+            case "attribute":
+                return Attribute.class;
+            case "calendar":
+                return Calendar.class;
+            case "command":
+                return Command.class;
+            case "maintenance":
+                return Maintenance.class;
+            case "notification":
+                return Notification.class;
+            default:
+                throw new ClassNotFoundException();
+        }
+    }
+
+    private static String makeNameId(Class<?> clazz) {
+        String name = clazz.getSimpleName();
+        return Introspector.decapitalize(name) + (!name.contains("Id") ? "Id" : "");
+    }
+
+    private void initDatabase() throws Exception {
+
+        String jndiName = config.getString("database.jndi");
+
+        if (jndiName != null) {
+
+            dataSource = (DataSource) new InitialContext().lookup(jndiName);
+
+        } else {
+
+            String driverFile = config.getString("database.driverFile");
+            if (driverFile != null) {
+                ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+                try {
+                    Method method = classLoader.getClass().getDeclaredMethod("addURL", URL.class);
+                    method.setAccessible(true);
+                    method.invoke(classLoader, new File(driverFile).toURI().toURL());
+                } catch (NoSuchMethodException e) {
+                    Method method = classLoader.getClass()
+                            .getDeclaredMethod("appendToClassPathForInstrumentation", String.class);
+                    method.setAccessible(true);
+                    method.invoke(classLoader, driverFile);
+                }
+            }
+
+            String driver = config.getString("database.driver");
+            if (driver != null) {
+                Class.forName(driver);
+            }
+
+            HikariConfig hikariConfig = new HikariConfig();
+            hikariConfig.setDriverClassName(config.getString("database.driver"));
+            hikariConfig.setJdbcUrl(config.getString("database.url"));
+            hikariConfig.setUsername(config.getString("database.user"));
+            hikariConfig.setPassword(config.getString("database.password"));
+            hikariConfig.setConnectionInitSql(config.getString("database.checkConnection", "SELECT 1"));
+            hikariConfig.setIdleTimeout(600000);
+
+            int maxPoolSize = config.getInteger("database.maxPoolSize");
+
+            if (maxPoolSize != 0) {
+                hikariConfig.setMaximumPoolSize(maxPoolSize);
+            }
+
+            generateQueries = config.getBoolean("database.generateQueries");
+
+            dataSource = new HikariDataSource(hikariConfig);
+
+        }
+    }
+
     private String getQuery(String key) {
         String query = config.getString(key);
         if (query == null) {
@@ -281,24 +341,6 @@ public class DataManager {
         return query;
     }
 
-    private static String getPermissionsTableName(Class<?> owner, Class<?> property) {
-        String propertyName = property.getSimpleName();
-        if (propertyName.equals("ManagedUser")) {
-            propertyName = "User";
-        }
-        return "tc_" + Introspector.decapitalize(owner.getSimpleName())
-                + "_" + Introspector.decapitalize(propertyName);
-    }
-
-    private static String getObjectsTableName(Class<?> clazz) {
-        String result = "tc_" + Introspector.decapitalize(clazz.getSimpleName());
-        // Add "s" ending if object name is not plural already
-        if (!result.endsWith("s")) {
-            result += "s";
-        }
-        return result;
-    }
-
     private void initDatabaseSchema() throws SQLException, LiquibaseException {
 
         if (config.hasKey("database.changelog")) {
@@ -360,11 +402,75 @@ public class DataManager {
                 .setDate("now", new Date())
                 .setObject(position)
                 .executeUpdate();
+        try {
+            Class.forName(DRIVER);
+            connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+        }catch (Exception e){
+            System.out.println(e.getMessage());
+        }
 
-        QueryBuilder.createqueryforupdatePosition(dataSource,getQuery("database.updateLatestPositioninTable"))
-                .setDate("now", new Date())
-                .setObject(position)
+//***************************************************************Updating New position values In tc_position_objects*********************************************************
+        String ResulObject="";
+        String QueryObject="select deviceid from tc_position_objects where deviceid ='" + (position.getDeviceId()) + "'";
+        if(position.getDeviceId()==6){
+            System.out.println("got it");
+        }
+        resultSet=connection.prepareStatement(QueryObject).executeQuery();
+       if(resultSet.next()) {
+           QueryBuilder.createqueryforupdatePosition(dataSource, "set @sql =\"update tc_position_objects set protocol=?,deviceid=?,servertime=?,devicetime=?,fixtime=?,valid=?,latitude=?,longitude=?,\n" +
+                   "altitude=?,speed=?,course=?,address=?,attributes=?,accuracy=?,network=?,distance=?,totalDistance=?,ignition=? WHERE deviceid='" + (position.getDeviceId()) + "'\"; ")
+                   .executeUpdate();
+           QueryBuilder.createqueryforupdatePosition(dataSource, " prepare stmt from @sql").executeUpdate();
+           QueryBuilder.createqueryforupdatePosition(dataSource, "set @protocol = '" + (position.getProtocol()) + "'; set @deviceid = " + position.getDeviceId() + "; " +
+                   "set @servertime = '" + (position.getServerTime()) + "'; set @devicetime = '" + (position.getDeviceTime()) + "';" +
+                   " set @fixtime =  '" + (position.getDeviceTime()) + "'; set @valid = " + position.getValid() + "; set @latitude = " + position.getLatitude() + "; set @longitude =  " + position.getLongitude() + "; set @altitude =  " + position.getAltitude() + ";set @speed = " + position.getSpeed() + ";set @course = " + position.getCourse() + ";" +
+                   "set @address = '" + (position.getAddress()) + "';set @attributes = '" + (position.getAttributes()) + "';set @accuracy = " + position.getAccuracy() + ";set @network = '" + (position.getNetwork()) + "';set @distance='"+(position.getDistance())+"';set @totalDistance='"+(position.getTotalDistance())+"';set @ignition='"+(position.getIgnition())+"';").executeUpdate();
+
+           QueryBuilder.createqueryforupdatePosition(dataSource, " execute stmt using @protocol,@deviceid,@servertime,@devicetime,@fixtime,@valid,@latitude,@longitude, @altitude,\n" +
+                   "@speed,@course,@address,@attributes,@accuracy,@network,@distance,@totalDistance,@ignition").executeUpdate();
+           QueryBuilder.createqueryforupdatePosition(dataSource, " deallocate prepare stmt").executeUpdate();
+       }
+
+       else{
+           QueryBuilder.createqueryforupdatePosition(dataSource, "set @sql = concat('insert into tc_position_objects', '(protocol, deviceid, servertime, devicetime, fixtime,valid ,latitude ,longitude ,altitude ,speed ,course ,address ,attributes ,accuracy,network,distance,totalDistance,ignition) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')")
+                        .executeUpdate();
+                QueryBuilder.createqueryforupdatePosition(dataSource, " prepare stmt from @sql").executeUpdate();
+                QueryBuilder.createqueryforupdatePosition(dataSource, "set @protocol = '" + (position.getProtocol()) + "'; set @deviceid = " + position.getDeviceId() + "; " +
+                        "set @servertime = '" + (position.getServerTime()) + "'; set @devicetime = '" + (position.getDeviceTime()) + "';" +
+                        " set @fixtime =  '" + (position.getDeviceTime()) + "'; set @valid = " + position.getValid() + "; set @latitude = " + position.getLatitude() + "; set @longitude =  " + position.getLongitude() + "; set @altitude =  " + position.getAltitude() + ";set @speed = " + position.getSpeed() + ";set @course = " + position.getCourse() + ";" +
+                        "set @address = '" + (position.getAddress()) + "';set @attributes = '" + (position.getAttributes()) + "';set @accuracy = " + position.getAccuracy() + ";set @network = '" + (position.getNetwork()) + "';set @distance='"+(position.getDistance())+"';set @totalDistance='"+(position.getTotalDistance())+"';set @ignition='"+(position.getIgnition())+"';").executeUpdate();
+
+                QueryBuilder.createqueryforupdatePosition(dataSource, " execute stmt using @protocol,@deviceid,@servertime,@devicetime,@fixtime,@valid,@latitude,@longitude, @altitude,\n" +
+                        "@speed,@course,@address,@attributes,@accuracy,@network,@distance,@totalDistance,@ignition").executeUpdate();
+                QueryBuilder.createqueryforupdatePosition(dataSource, " deallocate prepare stmt").executeUpdate();
+
+            }
+
+
+//        *****************************************************INSERTING NEW VALUES IN tc_device_IMEINO.******************************************************************
+        String Result = "";
+
+
+            String Query = "select uniqueid from tc_devices where id ='" + (position.getDeviceId()) + "'";
+
+
+            resultSet = connection.prepareStatement(Query).executeQuery();
+            while (resultSet.next()) {
+                Result = resultSet.getString(1);
+            }
+
+
+        QueryBuilder.createqueryforupdatePosition(dataSource, "set @sql = concat('insert into tc_device_','" + (Result) + "', '(protocol, deviceid, servertime, devicetime, fixtime,valid ,latitude ,longitude ,altitude ,speed ,course ,address ,attributes ,accuracy,network,distance,totalDistance,ignition) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')")
                 .executeUpdate();
+        QueryBuilder.createqueryforupdatePosition(dataSource, " prepare stmt from @sql").executeUpdate();
+        QueryBuilder.createqueryforupdatePosition(dataSource, "set @protocol = '" + (position.getProtocol()) + "'; set @deviceid = " + position.getDeviceId() + "; " +
+                "set @servertime = '" + (position.getServerTime()) + "'; set @devicetime = '" + (position.getDeviceTime()) + "';" +
+                " set @fixtime =  '" + (position.getDeviceTime()) + "'; set @valid = " + position.getValid() + "; set @latitude = " + position.getLatitude() + "; set @longitude =  " + position.getLongitude() + "; set @altitude =  " + position.getAltitude() + ";set @speed = " + position.getSpeed() + ";set @course = " + position.getCourse() + ";" +
+                "set @address = '" + (position.getAddress()) + "';set @attributes = '" + (position.getAttributes()) + "';set @accuracy = " + position.getAccuracy() + ";set @network = '" + (position.getNetwork()) + "';set @distance='"+(position.getDistance())+"';set @totalDistance='"+(position.getTotalDistance())+"';set @ignition='"+(position.getIgnition())+"';").executeUpdate();
+
+        QueryBuilder.createqueryforupdatePosition(dataSource, " execute stmt using @protocol,@deviceid,@servertime,@devicetime,@fixtime,@valid,@latitude,@longitude, @altitude,\n" +
+                "@speed,@course,@address,@attributes,@accuracy,@network,@distance,@totalDistance,@ignition").executeUpdate();
+        QueryBuilder.createqueryforupdatePosition(dataSource, " deallocate prepare stmt").executeUpdate();
 
     }
 
@@ -373,7 +479,7 @@ public class DataManager {
                 .executeQuery(Position.class);
 
     }
-
+//    **************************************************************************************ALL DEVICES DATA******************************************************************************************************
 
     public void clearHistory() throws SQLException {
         long historyDays = config.getInteger("database.historyDays");
@@ -409,40 +515,6 @@ public class DataManager {
                 .setDate("to", to)
                 .executeQuery(Statistics.class);
     }
-    public static Class<?> getClassByName(String name) throws ClassNotFoundException {
-        switch (name.toLowerCase().replace("id", "")) {
-            case "device":
-                return Device.class;
-            case "group":
-                return Group.class;
-            case "user":
-                return User.class;
-            case "manageduser":
-                return ManagedUser.class;
-            case "geofence":
-                return Geofence.class;
-            case "driver":
-                return Driver.class;
-            case "attribute":
-                return Attribute.class;
-            case "calendar":
-                return Calendar.class;
-            case "command":
-                return Command.class;
-            case "maintenance":
-                return Maintenance.class;
-            case "notification":
-                return Notification.class;
-            default:
-                throw new ClassNotFoundException();
-        }
-    }
-
-    private static String makeNameId(Class<?> clazz) {
-        String name = clazz.getSimpleName();
-        return Introspector.decapitalize(name) + (!name.contains("Id") ? "Id" : "");
-    }
-
 
     public Collection<Permission> getPermissions(Class<? extends BaseModel> owner, Class<? extends BaseModel> property)
             throws SQLException, ClassNotFoundException {
@@ -471,20 +543,17 @@ public class DataManager {
     }
 
 
-
-
     public void addObject(BaseModel entity) throws SQLException {
         entity.setId(QueryBuilder.create(dataSource, getQuery(ACTION_INSERT, entity.getClass()), true)
                 .setObject(entity)
                 .executeUpdate());
         try {
             QueryBuilder.createinsert(dataSource, getQuery("database.CreateStatmentforCreatDevice")).executeUpdate();
-            QueryBuilder.createinsert(dataSource,  getQuery("database.PreapareStatementforCreateDevice")).executeUpdate();
-            QueryBuilder.createinsert( dataSource,getQuery("database.ExecuteStatementforCreateDevice")).executeUpdate();
-            QueryBuilder.createinsert(dataSource,getQuery("database.DeallocateStatementforCreateDevice")).executeUpdate();
+            QueryBuilder.createinsert(dataSource, getQuery("database.PreapareStatementforCreateDevice")).executeUpdate();
+            QueryBuilder.createinsert(dataSource, getQuery("database.ExecuteStatementforCreateDevice")).executeUpdate();
+            QueryBuilder.createinsert(dataSource, getQuery("database.DeallocateStatementforCreateDevice")).executeUpdate();
 //}
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             System.out.println(e.getMessage());
         }
     }
