@@ -406,12 +406,49 @@ public class DeviceResource extends BaseObjectResource<Device> {
         }
         return jsonArray;
     }
+
+    @Path("/totaldevices")
+    @GET
+    public  JSONArray getTotalDevices() throws  SQLException{
+        JSONArray jsonArray = new JSONArray();
+        JSONArray jsonArray2 = new JSONArray();
+        JSONArray jsonArray3 = new JSONArray();
+        JSONArray jsonArray4 = new JSONArray();
+        JSONArray jsonArray5 = new JSONArray();
+        JSONArray jsonArray1=new JSONArray();
+
+       DeviceResource deviceResource=new DeviceResource();
+    jsonArray =deviceResource.getrunning();
+       for(int i=0;i<jsonArray.size();i++){
+           jsonArray1.add(jsonArray.get(i));
+       }
+       jsonArray2=deviceResource.getidle();
+        for(int i=0;i<jsonArray2.size();i++){
+            jsonArray1.add(jsonArray2.get(i));
+        }
+        jsonArray3= deviceResource.getstop();
+        for(int i=0;i<jsonArray3.size();i++){
+            jsonArray1.add(jsonArray3.get(i));
+        }
+        jsonArray4=deviceResource.getnodata();
+        for(int i=0;i<jsonArray4.size();i++){
+            jsonArray1.add(jsonArray4.get(i));
+        }
+        jsonArray5=deviceResource.getinactive();
+        for(int i=0;i<jsonArray5.size();i++){
+            jsonArray1.add(jsonArray5.get(i));
+        }
+        return jsonArray1;
+    }
+
+
+
     @Path("/specificdevice")
     @GET
     public JSONArray getspecificdevice(@QueryParam("id") int id)throws SQLException{
         JSONArray jsonArray = new JSONArray();
         String Query ="select * from traccar.tc_position_objects inner join traccar.tc_devices where "+
-        "tc_position_objects.deviceid=tc_devices.id AND deviceid="+(id)+"";
+        "tc_position_objects.deviceid=tc_devices.id AND tc_position_objects.deviceid="+(id)+"";
         try {
             Class.forName(DRIVER);
             Connection connection = DriverManager.getConnection(

@@ -149,5 +149,71 @@ public class Device extends GroupedModel {
     public void setDisabled(boolean disabled) {
         this.disabled = disabled;
     }
+    private String  reseller;
 
+
+    public String getReseller() {
+        return reseller;
+    }
+
+    public void setReseller(String reseller) {
+        this.reseller = reseller;
+    }
+    private  String company;
+
+    public String getCompany() {
+        return company;
+    }
+
+    public void setCompany(String company) {
+        this.company = company;
+    }
+    private String employeename;
+
+
+    public String getEmployeename() {
+        return employeename;
+    }
+
+    public void setEmployeename(String employeename) {
+        this.employeename = employeename;
+    }
+
+    private String designation;
+
+    public String getDesignation() {
+        return designation;
+    }
+
+    public void setDesignation(String designation) {
+        this.designation = designation;
+    }
+
+    private String simcircle;
+
+    public String getSimcircle() {
+        return simcircle;
+    }
+
+    public void setSimcircle(String simcircle) {
+        this.simcircle = simcircle;
+    }
+    private String simplan;
+
+
+    public String getSimplan() {
+        return simplan;
+    }
+
+    public void setSimplan(String simplan) {
+        this.simplan = simplan;
+    }
+    private String simnumber;
+    public String getSimnumber() {
+        return simnumber;
+    }
+
+    public void setSimnumber(String simnumber) {
+        this.simnumber = simnumber;
+    }
 }
