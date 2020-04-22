@@ -166,6 +166,7 @@ public class Position extends Message {
         return serverTime;
     }
 
+
     public void setServerTime(Date serverTime) {
         this.serverTime = serverTime;
     }

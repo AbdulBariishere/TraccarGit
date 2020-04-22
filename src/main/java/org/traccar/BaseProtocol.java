@@ -28,7 +28,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-public abstract class BaseProtocol implements Protocol {
+public abstract class
+BaseProtocol implements Protocol {
 
     private final String name;
     private final Set<String> supportedDataCommands = new HashSet<>();

@@ -20,6 +20,7 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -417,12 +418,15 @@ public class DataManager {
         }
         resultSet=connection.prepareStatement(QueryObject).executeQuery();
        if(resultSet.next()) {
+           Date date = position.getServerTime();
+           SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss dd/MM/yyyy ");
+           String datetime = sdf.format(date);
            QueryBuilder.createqueryforupdatePosition(dataSource, "set @sql =\"update tc_position_objects set protocol=?,deviceid=?,servertime=?,devicetime=?,fixtime=?,valid=?,latitude=?,longitude=?,\n" +
                    "altitude=?,speed=?,course=?,address=?,attributes=?,accuracy=?,network=?,distance=?,totalDistance=?,ignition=? WHERE deviceid='" + (position.getDeviceId()) + "'\"; ")
                    .executeUpdate();
            QueryBuilder.createqueryforupdatePosition(dataSource, " prepare stmt from @sql").executeUpdate();
            QueryBuilder.createqueryforupdatePosition(dataSource, "set @protocol = '" + (position.getProtocol()) + "'; set @deviceid = " + position.getDeviceId() + "; " +
-                   "set @servertime = '" + (position.getServerTime()) + "'; set @devicetime = '" + (position.getDeviceTime()) + "';" +
+                   "set @servertime = '" + datetime + "'; set @devicetime = '" + (position.getDeviceTime()) + "';" +
                    " set @fixtime =  '" + (position.getDeviceTime()) + "'; set @valid = " + position.getValid() + "; set @latitude = " + position.getLatitude() + "; set @longitude =  " + position.getLongitude() + "; set @altitude =  " + position.getAltitude() + ";set @speed = " + position.getSpeed() + ";set @course = " + position.getCourse() + ";" +
                    "set @address = '" + (position.getAddress()) + "';set @attributes = '" + (position.getAttributes()) + "';set @accuracy = " + position.getAccuracy() + ";set @network = '" + (position.getNetwork()) + "';set @distance='"+(position.getDistance())+"';set @totalDistance='"+(position.getTotalDistance())+"';set @ignition='"+(position.getIgnition())+"';").executeUpdate();
 
@@ -432,11 +436,14 @@ public class DataManager {
        }
 
        else{
+           Date date = position.getServerTime();
+           SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss dd/MM/yyyy ");
+           String datetime = sdf.format(date);
            QueryBuilder.createqueryforupdatePosition(dataSource, "set @sql = concat('insert into tc_position_objects', '(protocol, deviceid, servertime, devicetime, fixtime,valid ,latitude ,longitude ,altitude ,speed ,course ,address ,attributes ,accuracy,network,distance,totalDistance,ignition) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')")
                         .executeUpdate();
                 QueryBuilder.createqueryforupdatePosition(dataSource, " prepare stmt from @sql").executeUpdate();
                 QueryBuilder.createqueryforupdatePosition(dataSource, "set @protocol = '" + (position.getProtocol()) + "'; set @deviceid = " + position.getDeviceId() + "; " +
-                        "set @servertime = '" + (position.getServerTime()) + "'; set @devicetime = '" + (position.getDeviceTime()) + "';" +
+                        "set @servertime = '" + datetime + "'; set @devicetime = '" + (position.getDeviceTime()) + "';" +
                         " set @fixtime =  '" + (position.getDeviceTime()) + "'; set @valid = " + position.getValid() + "; set @latitude = " + position.getLatitude() + "; set @longitude =  " + position.getLongitude() + "; set @altitude =  " + position.getAltitude() + ";set @speed = " + position.getSpeed() + ";set @course = " + position.getCourse() + ";" +
                         "set @address = '" + (position.getAddress()) + "';set @attributes = '" + (position.getAttributes()) + "';set @accuracy = " + position.getAccuracy() + ";set @network = '" + (position.getNetwork()) + "';set @distance='"+(position.getDistance())+"';set @totalDistance='"+(position.getTotalDistance())+"';set @ignition='"+(position.getIgnition())+"';").executeUpdate();
 
@@ -458,13 +465,15 @@ public class DataManager {
             while (resultSet.next()) {
                 Result = resultSet.getString(1);
             }
-
+        Date date = position.getServerTime();
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss dd/MM/yyyy ");
+        String datetime = sdf.format(date);
 
         QueryBuilder.createqueryforupdatePosition(dataSource, "set @sql = concat('insert into tc_device_','" + (Result) + "', '(protocol, deviceid, servertime, devicetime, fixtime,valid ,latitude ,longitude ,altitude ,speed ,course ,address ,attributes ,accuracy,network,distance,totalDistance,ignition) values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')")
                 .executeUpdate();
         QueryBuilder.createqueryforupdatePosition(dataSource, " prepare stmt from @sql").executeUpdate();
         QueryBuilder.createqueryforupdatePosition(dataSource, "set @protocol = '" + (position.getProtocol()) + "'; set @deviceid = " + position.getDeviceId() + "; " +
-                "set @servertime = '" + (position.getServerTime()) + "'; set @devicetime = '" + (position.getDeviceTime()) + "';" +
+                "set @servertime = '" + datetime + "'; set @devicetime = '" + (position.getDeviceTime()) + "';" +
                 " set @fixtime =  '" + (position.getDeviceTime()) + "'; set @valid = " + position.getValid() + "; set @latitude = " + position.getLatitude() + "; set @longitude =  " + position.getLongitude() + "; set @altitude =  " + position.getAltitude() + ";set @speed = " + position.getSpeed() + ";set @course = " + position.getCourse() + ";" +
                 "set @address = '" + (position.getAddress()) + "';set @attributes = '" + (position.getAttributes()) + "';set @accuracy = " + position.getAccuracy() + ";set @network = '" + (position.getNetwork()) + "';set @distance='"+(position.getDistance())+"';set @totalDistance='"+(position.getTotalDistance())+"';set @ignition='"+(position.getIgnition())+"';").executeUpdate();
 
